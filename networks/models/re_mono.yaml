@@ -1,0 +1,54 @@
+
+depth_multiple: 1.0  # model depth multiple
+width_multiple: 1.0 # layer channel multiple
+features: [ 12, 18, 30]  # 修改：包含原图特征
+depth: [4, 4, 10]
+drop_path_rate: 0.2
+num_ch_enc: [48, 80, 128] # 编码器各阶段输出通道数
+img_size: [192, 640]  # 输入图像尺寸
+
+backbone:
+  # [from, number, module, args]  | args = [c1, c2, *args[1:]]
+   - [-1, 1, nn.Identity, []]  # 0-identity 原图特征
+   - [-1, 1, AvgPool, [3, 2, 1]]  # 1-pool1 img/2
+   - [-1, 1, AvgPool, [3, 2, 1]]  # 2-pool2 img/4
+   - [-1, 1, AvgPool, [3, 2, 1]]  # 3-pool3 img/8
+
+   - [0, 1, Conv, [48, 3, 2, 1, True]]  # 4-P1/2   从原图(-1)获取输入
+   - [-1, 1, Conv, [48, 3, 1, 1, True]]  # 5
+   - [-1, 1, Conv, [48, 3, 1, 1, True]]  # 6
+
+   - [[-1, 1], 1, Concat, [1]]  # 7 cat pool1
+   - [-1, 1, Conv, [ 48, 3, 2, 1 ]]  # 8-P2/4-tmp_x1
+    # 第一阶段特征提取：4个块（3×DilatedConv + 1×LGFI）
+   - [-1, 1, C3P, [48, True, 'original']]
+   - [-1, 1, C3P, [48, True, 'original']]
+   - [-1, 1, C3P, [48, True, 'original']]
+   - [ -1,  1, LGFI,  [48, 0.1, 1e-6, 6, True, 8] ]  # 12: drop_path, layer_scale_init_value, expan_ratio, use_pos_emb, num_heads --feature1
+
+   - [[-1, 2, 8], 1, Concat, [1]]  # 13 cat pool2
+   - [ -1, 1, Conv, [ 80, 3, 2, 1 ] ]  # 14-P3/8
+
+    # 第二阶段特征提取：4个块（3×DilatedConv + 1×LGFI）
+   - [-1, 1, C3P, [80, True, 'original']]
+   - [-1, 1, C3P, [80, True, 'original']]
+   - [-1, 1, C3P, [80, True, 'original']]
+   - [ -1,  1, LGFI,  [80, 0.1, 1e-6, 6, False, 8] ]  # 18: drop_path, layer_scale_init_value, expan_ratio, use_pos_emb, num_heads --feature1
+
+   - [[-1, 3, 14], 1, Concat, [1]]  # 19 cat pool2
+   - [ -1, 1, Conv, [ 128, 3, 2, 1 ] ]  # 20-P3/8
+
+    # 第三阶段特征提取：10个块（3×DilatedConv + 1×LGFI）
+   - [-1, 1, C3P, [128, True, 'original']]
+   - [-1, 1, C3P, [128, True, 'original']]
+   - [-1, 1, C3P, [128, True, 'original']]
+
+   - [ -1, 1, C3P, [ 128, True, 'original' ] ]
+   - [ -1, 1, C3P, [ 128, True, 'original' ] ]
+   - [ -1, 1, C3P, [ 128, True, 'original' ] ]
+
+   - [ -1, 1, C3P, [ 128, True, 'original' ] ]
+   - [ -1, 1, C3P, [ 128, True, 'original' ] ]
+   - [ -1, 1, C3P, [ 128, True, 'original' ] ]
+
+   - [ -1,  1, LGFI,  [128, 0.1, 1e-6, 6, False, 8] ] # 30
