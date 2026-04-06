@@ -1,1 +1,3 @@
+This codebase integrates the algorithmic frameworks of most state-of-the-art, publicly available models—such as MonoViT, LiteMono, RaDepth, and HRDepth. Its objective is to bring the lightweight integration paradigm currently prevalent in object detection algorithms to the field of monocular depth estimation. By restructuring the code (e.g., through the introduction of a `cfg/options.yaml` file), the configuration of hyperparameters is made transparent and intuitive, thereby simplifying the training workflow and significantly enhancing the ease of integrating and experimenting with different model components (such as various encoders and decoders).
+
 The full code and detailed training process will be announced later.
